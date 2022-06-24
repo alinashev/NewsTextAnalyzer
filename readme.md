@@ -1,2 +1,2 @@
 # News Text Analyzer
-![Schema](https://github.com/alinashev/NewsTextAnalyzer/assets/schema.png)
+![Schema](https://github.com/alinashev/NewsTextAnalyzer/blob/master/assets/schema.png)
