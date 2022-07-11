@@ -12,7 +12,7 @@ def lambda_handler(event, context):
         print("Message empty")
         return
 
-    conf = Configurator(event['source'], 'testTable')
+    conf = Configurator(event['source'], 'aNews')
     Executor.execute(event['url'],
                      event['category'],
                      event['source'],
