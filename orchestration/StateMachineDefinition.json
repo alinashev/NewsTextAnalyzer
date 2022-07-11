@@ -1,0 +1,248 @@
+{
+  "StartAt": "LambdaStack",
+  "States": {
+    "LambdaStack": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:us-east-2:062261762656:function:a-stack:$LATEST"
+      },
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.error",
+          "Next": "Notify"
+        }
+      ],
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.Timeout",
+            "Lambda.Unknown",
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "LambdaScraper"
+    },
+    "Notify": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::sns:publish",
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "IntervalSeconds": 3,
+          "MaxAttempts": 2,
+          "BackoffRate": 1.5
+        }
+      ],
+      "Parameters": {
+        "TopicArn": "arn:aws:sns:us-east-2:062261762656:ntaErrors",
+        "Subject": "[ERROR]: Task Failed",
+        "Message.$": "$.error"
+      },
+      "End": true
+    },
+    "LambdaScraper": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "OutputPath": "$.Payload",
+      "Parameters": {
+        "Payload.$": "$",
+        "FunctionName": "arn:aws:lambda:us-east-2:062261762656:function:a-scraper:$LATEST"
+      },
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.error",
+          "Next": "Notify"
+        }
+      ],
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.Timeout",
+            "Lambda.Unknown",
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.SdkClientException"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Create_Cluster"
+    },
+    "Create_Cluster": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::elasticmapreduce:createCluster.sync",
+      "Parameters": {
+        "Name": "a-nta-emr",
+        "StepConcurrencyLevel": 5,
+        "VisibleToAllUsers": true,
+        "ReleaseLabel": "emr-5.34.0",
+        "Applications": [
+          {
+            "Name": "spark"
+          },
+          {
+            "Name": "hive"
+          }
+        ],
+        "Configurations": [
+          {
+            "Classification": "spark-env",
+            "Properties": {
+              "PYSPARK_PYTHON": "/usr/bin/python3"
+            }
+          },
+          {
+            "Classification": "spark-defaults",
+            "Properties": {
+              "spark.driver.maxResultSize": "10g",
+              "spark.driver.memory": "10g",
+              "spark.executor.memory": "15g"
+            }
+          }
+        ],
+        "ServiceRole": "EMR_DefaultRole",
+        "JobFlowRole": "EMR_EC2_DefaultRole",
+        "LogUri": "s3://a-tech-bucket/NTA/emrLog/",
+        "Instances": {
+          "Ec2KeyName": "key1",
+          "KeepJobFlowAliveWhenNoSteps": true,
+          "InstanceFleets": [
+            {
+              "InstanceFleetType": "MASTER",
+              "TargetOnDemandCapacity": 1,
+              "InstanceTypeConfigs": [
+                {
+                  "InstanceType": "m5.xlarge"
+                }
+              ]
+            },
+            {
+              "InstanceFleetType": "CORE",
+              "TargetSpotCapacity": 10,
+              "InstanceTypeConfigs": [
+                {
+                  "InstanceType": "m5.xlarge"
+                }
+              ]
+            },
+            {
+              "InstanceFleetType": "TASK",
+              "TargetSpotCapacity": 30,
+              "InstanceTypeConfigs": [
+                {
+                  "InstanceType": "m5.xlarge"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "ResultPath": "$.CreateClusterResult",
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.error",
+          "Next": "Notify"
+        }
+      ],
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.Timeout"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Get_ClusterId"
+    },
+    "Get_ClusterId": {
+      "Type": "Pass",
+      "Parameters": {
+        "ClusterId.$": "$.CreateClusterResult.ClusterId"
+      },
+      "Next": "Submit_PySpark_Job"
+    },
+    "Submit_PySpark_Job": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::elasticmapreduce:addStep.sync",
+      "Parameters": {
+        "ClusterId.$": "$.ClusterId",
+        "Step": {
+          "Name": "SparkJob",
+          "ActionOnFailure": "CONTINUE",
+          "HadoopJarStep": {
+            "Jar": "command-runner.jar",
+            "Args": [
+              "bash",
+              "-c",
+              "aws s3 cp s3://a-tech-bucket/NTA/app/requirements.txt .; pip3 install -r requirements.txt; spark-submit --jars s3://a-tech-bucket/NTA/app/jars/postgresql-42.4.0.jar --driver-class-path s3://a-tech-bucket/NTA/app/jars/postgresql-42.4.0.jar --conf spark.executor.extraClassPath=s3://a-tech-bucket/NTA/app/jars/postgresql-42.4.0.jar --py-files s3://a-tech-bucket/NTA/app/utilities.zip s3://a-tech-bucket/NTA/app/main.py && cd"
+            ]
+          }
+        }
+      },
+      "ResultPath": null,
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": null,
+          "Next": "Terminate_Cluster"
+
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.error",
+          "Next": "Notify"
+
+        }
+      ],
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "States.Timeout"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 6,
+          "BackoffRate": 2
+        }
+      ],
+      "Next": "Terminate_Cluster"
+    },
+    "Terminate_Cluster": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::elasticmapreduce:terminateCluster.sync",
+      "Parameters": {
+        "ClusterId.$": "$.ClusterId"
+      },
+      "End": true
+    }
+  }
+}
