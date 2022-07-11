@@ -15,5 +15,9 @@ class Scraper:
         webpage: Response = requests.get(self.url)
         soup: BeautifulSoup = BeautifulSoup(webpage.content, "html.parser")
         dom: Any = etree.HTML(str(soup))
-        text_list: list = list(map(lambda i: str(i.text), dom.xpath(self.xpath)))
+
+        text_list: list = list(
+            map(lambda i: str(i.text),
+                dom.xpath(self.xpath))
+        )
         return ' '.join(map(str, text_list))

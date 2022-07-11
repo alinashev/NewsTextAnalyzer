@@ -13,7 +13,10 @@ def lambda_handler(event, context):
         return
 
     conf = Configurator(event['source'], 'testTable')
-    Executor.execute(event['url'], event['category'], event['source'], **conf.get_param())
+    Executor.execute(event['url'],
+                     event['category'],
+                     event['source'],
+                     **conf.get_param())
 
     return {
         'statusCode': 200

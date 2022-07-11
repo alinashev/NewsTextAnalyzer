@@ -9,7 +9,9 @@ class Configurator:
 
     def get_bbc_param(self) -> dict:
         return {
-            "xpath": "//div[@width='compact']//article//div[@data-component='text-block']//p",
+            "xpath": "//div[@width='compact']"
+                     + "//article"
+                     + "//div[@data-component='text-block']//p",
             "table_name": self.table,
             "date": self.date
         }

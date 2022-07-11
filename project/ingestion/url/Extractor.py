@@ -1,10 +1,10 @@
-import http.client
-import urllib.parse
 import json
 import datetime
+import http.client
+import urllib.parse
 
 from typing import Any
-from keys import access_key
+from SecretsManager import SecretsManager
 
 
 class Extractor:
@@ -15,9 +15,10 @@ class Extractor:
         self.offset = 0
 
     def extract(self, offset=0) -> None:
-        connector: http.client.HTTPConnection = http.client.HTTPConnection('api.mediastack.com')
+        connector: http.client.HTTPConnection =\
+            http.client.HTTPConnection('api.mediastack.com')
         params: str = urllib.parse.urlencode({
-            'access_key': access_key,
+            'access_key': SecretsManager.get_secret("media_stack_key")["key"],
             'sources': self.source,
             'sort': 'published_desc',
             'limit': 100,
