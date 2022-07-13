@@ -4,20 +4,19 @@ from typing import Any
 from pyspark.sql.functions import udf, explode
 from pyspark.sql import DataFrame
 from pyspark.sql.types import StringType, ArrayType, FloatType
-from utilities.TextAnalyzer import TextAnalyzer
-from utilities.Configurator import Configurator
+
+from textanalyzer import TextAnalyzer
 
 
 class Aggregator:
 
-    def aggregate(self, df: DataFrame) -> None:
-        conf: Configurator = Configurator()
+    def aggregate(self, df: DataFrame, conf) -> None:
         aggregation: dict = self.action(df)
 
         for a in aggregation:
             aggregation[a].withColumn(
                 "date",
-                F.lit(str(Configurator.get_date()))
+                F.lit(str(conf.get_date()))
             ).write.jdbc(**conf.table_config()[a])
 
     @staticmethod

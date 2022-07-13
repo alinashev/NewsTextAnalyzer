@@ -1,14 +1,16 @@
 import json
 
-from Executor import Executor
-from QueueWriter import QueueWriter
+from extractor import Extractor
+from queuewriter import QueueWriter
 
 
 def lambda_handler(event, context):
-    sources: list = ["bbc", "dailycaller", "americanbankingnews"]
+    sources = event["Source"]
 
     for s in sources:
-        for i in Executor.execute(s):
+        extractor: Extractor = Extractor(s)
+        extractor.extract()
+        for i in extractor.get_news():
             QueueWriter.write('a-news', json.dumps({
                 "url": i["url"],
                 "category": i["category"],

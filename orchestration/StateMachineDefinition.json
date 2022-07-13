@@ -1,14 +1,67 @@
 {
-  "StartAt": "LambdaStack",
+  "Comment": "Parallel Example.",
+  "StartAt": "Lambda",
   "States": {
-    "LambdaStack": {
+    "Lambda": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "Lambda_stack_bbc",
+          "States": {
+            "Lambda_stack_bbc": {
+              "Type": "Task",
+              "Parameters": {
+                "Source": "bbc"
+              },
+              "Resource": "arn:aws:lambda:us-east-2:062261762656:function:a-stack",
+              "End": true
+            }
+          }
+        }
+      ,
+        {
+          "StartAt": "Lambda_stack_dailycaller",
+          "States": {
+            "Lambda_stack_dailycaller": {
+              "Type": "Task",
+              "Parameters": {
+                "Source": "dailycaller"
+              },
+              "Resource": "arn:aws:lambda:us-east-2:062261762656:function:a-stack",
+              "End": true
+            }
+          }
+        }
+      ,
+        {
+          "StartAt": "Lambda_stack_americanbankingnews",
+          "States": {
+            "Lambda_stack_americanbankingnews": {
+              "Type": "Task",
+              "Parameters": {
+                "Source": "americanbankingnews"
+              },
+              "Resource": "arn:aws:lambda:us-east-2:062261762656:function:a-stack",
+              "End": true
+            }
+          }
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.error",
+          "Next": "Notify"
+        }
+      ],
+      "ResultPath": null,
+      "Next": "Lambda_Scraper"
+    },
+    "Lambda_Scraper": {
       "Type": "Task",
-      "Resource": "arn:aws:states:::lambda:invoke",
-      "OutputPath": "$.Payload",
-      "Parameters": {
-        "Payload.$": "$",
-        "FunctionName": "arn:aws:lambda:us-east-2:062261762656:function:a-stack:$LATEST"
-      },
+      "Resource": "arn:aws:lambda:us-east-2:062261762656:function:a-scraper",
       "Catch": [
         {
           "ErrorEquals": [
@@ -32,7 +85,8 @@
           "BackoffRate": 2
         }
       ],
-      "Next": "LambdaScraper"
+      "ResultPath": null,
+      "Next": "Create_Cluster"
     },
     "Notify": {
       "Type": "Task",
@@ -53,39 +107,6 @@
         "Message.$": "$.error"
       },
       "End": true
-    },
-    "LambdaScraper": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::lambda:invoke",
-      "OutputPath": "$.Payload",
-      "Parameters": {
-        "Payload.$": "$",
-        "FunctionName": "arn:aws:lambda:us-east-2:062261762656:function:a-scraper:$LATEST"
-      },
-      "Catch": [
-        {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
-          "ResultPath": "$.error",
-          "Next": "Notify"
-        }
-      ],
-      "Retry": [
-        {
-          "ErrorEquals": [
-            "States.Timeout",
-            "Lambda.Unknown",
-            "Lambda.ServiceException",
-            "Lambda.AWSLambdaException",
-            "Lambda.SdkClientException"
-          ],
-          "IntervalSeconds": 2,
-          "MaxAttempts": 6,
-          "BackoffRate": 2
-        }
-      ],
-      "Next": "Create_Cluster"
     },
     "Create_Cluster": {
       "Type": "Task",
@@ -166,16 +187,6 @@
           "Next": "Notify"
         }
       ],
-      "Retry": [
-        {
-          "ErrorEquals": [
-            "States.Timeout"
-          ],
-          "IntervalSeconds": 2,
-          "MaxAttempts": 6,
-          "BackoffRate": 2
-        }
-      ],
       "Next": "Get_ClusterId"
     },
     "Get_ClusterId": {
@@ -209,19 +220,8 @@
           "ErrorEquals": [
             "States.ALL"
           ],
-          "ResultPath": null,
-          "Next": "Terminate_Cluster"
-
-        }
-      ],
-      "Catch": [
-        {
-          "ErrorEquals": [
-            "States.ALL"
-          ],
           "ResultPath": "$.error",
           "Next": "Notify"
-
         }
       ],
       "Retry": [

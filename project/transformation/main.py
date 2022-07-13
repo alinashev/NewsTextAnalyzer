@@ -1,14 +1,8 @@
 import os
-import sys
 
 from pyspark.sql import SparkSession
-
-if os.path.exists('transformation.zip'):
-    sys.path.insert(0, 'utilities.zip')
-else:
-    sys.path.insert(0, './utilities')
-
-from utilities.Executor import Executor
+from executor import Executor
+from configurator import TransformationConfigurator
 
 
 def main():
@@ -24,7 +18,8 @@ def main():
         .config("spark.driver.extraClassPath", sparkClassPath)\
         .getOrCreate()
 
-    Executor.execute(spark_session)
+    conf = TransformationConfigurator()
+    Executor.execute(spark_session, conf)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,8 @@ import http.client
 import urllib.parse
 
 from typing import Any
-from SecretsManager import SecretsManager
+
+from commons.SecretsManager import SecretsManager
 
 
 class Extractor:

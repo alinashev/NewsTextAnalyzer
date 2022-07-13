@@ -2,13 +2,14 @@ import datetime
 import nltk
 
 from typing import Any
-from utilities.SecretsManager import SecretsManager
+
+from commons.Configurator import Configurator
+from commons.SecretsManager import SecretsManager
 
 
-class Configurator:
+class TransformationConfigurator(Configurator):
 
-    @staticmethod
-    def get_date() -> Any:
+    def get_date(self) -> Any:
         return datetime.date.today() - datetime.timedelta(days=1)
 
     @staticmethod

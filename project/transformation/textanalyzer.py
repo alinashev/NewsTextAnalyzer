@@ -6,14 +6,14 @@ from nltk import pos_tag, WordNetLemmatizer
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.sentiment import SentimentIntensityAnalyzer
-from utilities.Configurator import Configurator
+from configurator import TransformationConfigurator
 
 
 class TextAnalyzer:
 
     def __init__(self, param: str) -> None:
         self.param = param
-        Configurator.nltk_setup()
+        TransformationConfigurator.nltk_setup()
 
     def analyze(self, sentence) -> list:
         words: list = self.preprocess(sentence)
