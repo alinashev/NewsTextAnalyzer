@@ -1,6 +1,6 @@
 import datetime
 
-from project.commons.Configurator import Configurator
+from commons.configurator import Configurator
 
 
 class IngestionConfigurator(Configurator):

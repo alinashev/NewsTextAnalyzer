@@ -5,7 +5,7 @@ import urllib.parse
 
 from typing import Any
 
-from commons.SecretsManager import SecretsManager
+from commons.secretsmanager import SecretsManager
 
 
 class Extractor:

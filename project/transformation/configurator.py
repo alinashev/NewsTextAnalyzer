@@ -3,8 +3,8 @@ import nltk
 
 from typing import Any
 
-from commons.Configurator import Configurator
-from commons.SecretsManager import SecretsManager
+from commons.configurator import Configurator
+from commons.secretsmanager import SecretsManager
 
 
 class TransformationConfigurator(Configurator):
