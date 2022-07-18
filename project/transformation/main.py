@@ -18,6 +18,7 @@ def main():
         .config("spark.driver.extraClassPath", sparkClassPath)\
         .getOrCreate()
 
+    TransformationConfigurator.nltk_setup()
     conf = TransformationConfigurator()
     Executor.execute(spark_session, conf)
 
