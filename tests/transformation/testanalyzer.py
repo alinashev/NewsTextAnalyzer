@@ -3,11 +3,13 @@ from typing import Any
 
 from nltk.corpus import stopwords
 
+from project.transformation.configurator import TransformationConfigurator
 from project.transformation.textanalyzer import TextAnalyzer
 
 
 class TestTextAnalyzer(unittest.TestCase):
     def setUp(self) -> None:
+        TransformationConfigurator.nltk_setup()
         self.analyzer_word: TextAnalyzer = TextAnalyzer("word")
         self.analyzer_part: TextAnalyzer = TextAnalyzer("part")
 
