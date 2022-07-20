@@ -1,0 +1,70 @@
+name: Code-Testing
+
+env:
+  AWS_REGION_NAME: "us-east-2"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python: [3.9]
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: main
+
+      - name: Install python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install linter
+        run: pip install flake8
+
+      - name: Run linter
+        run: flake8 .
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Setup modules
+        run: |
+          python setup.py build
+          python setup.py install
+          
+          cd project
+          python setup.py build
+          python setup.py install
+          
+      - name: Configuration AWS credentials
+        uses: aws-action/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION_NAME }}
+          
+
+      - name: Configuration AWS credentials
+        uses: aws-action/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION_NAME }}
+
+
+      - name: Tests run
+        run: |
+          python -m unittest discover -s tests/ingestion/url
+          python -m unittest discover -s tests/ingestion/scraping
+          python -m unittest discover -s tests/transformation
