@@ -1,0 +1,85 @@
+name: CREATE-Infrastructure
+
+env:
+  AWS_REGION_NAME: "us-east-2"
+
+  INFRASTRUCTURE_STACK_NAME: "a-infrastructure-nta"
+  ORCHESTRATION_STACK_NAME: "a-orchestration-nta-sm"
+  TRANSFORNATION_STACK_NAME: "a-transformation-nta-rds"
+
+  LAMBDA_STACK_NAME: "a-stack"
+  LAMBDA_SCRAPER_NAME: "a-scraper"
+  LAMBDA_SCRAPER_TRIGER_QUEUE_NAME: "a-news"
+
+  STATE_MACHINE_NAME: "a-nta-sm"
+  DATA_BASE_NAME: "newsdata"
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: master
+
+      - name: Configuration AWS credentials
+        uses: aws-action/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION_NAME }}
+
+      - name: Uploading infrastructure stack
+        run: |
+          aws cloudformation create-stack \
+          --stack-name ${{ env.INFRASTRUCTURE_STACK_NAME }} \
+          --template-body file://infrastructure/ingestion/Ingestion.yml \
+          --region ${{ env.AWS_REGION_NAME }} \
+          --capabilities CAPABILITY_NAMED_IAM \
+          --parameters \
+          ParameterKey=LambdaStackName,ParameterValue=${{ env.LAMBDA_STACK_NAME }} \
+          ParameterKey=LambdaScraperName,ParameterValue=${{ env.LAMBDA_SCRAPER_NAME }} \
+          ParameterKey=LambdaScraperTriggerQueueName,ParameterValue=${{ env.LAMBDA_SCRAPER_TRIGER_QUEUE_NAME }}       
+
+      - name: Wait infrastructure stack create complite
+        run: |
+          aws cloudformation wait stack-create-complete \
+          --stack-name ${{ env.INFRASTRUCTURE_STACK_NAME }} \
+          --region ${{ env.AWS_REGION_NAME }}
+
+      - name: Uploading orchestration stack (state-machine)
+        run: |
+          aws cloudformation create-stack \
+          --stack-name ${{ env.ORCHESTRATION_STACK_NAME }} \
+          --template-body file://infrastructure/orchestration/StepFunction.yml \
+          --region ${{ env.AWS_REGION_NAME }} \
+          --capabilities CAPABILITY_NAMED_IAM \
+          --parameters \
+          ParameterKey=StateMachineName,ParameterValue=${{ env.STATE_MACHINE_NAME }}
+
+      - name: Wait orchestration stack create complite
+        run: |
+          aws cloudformation wait stack-create-complete \
+          --stack-name ${{ env.ORCHESTRATION_STACK_NAME }} \
+          --region ${{ env.AWS_REGION_NAME }}
+
+      - name: Uploading transformation stack (rds)
+        run: |
+          aws cloudformation create-stack \
+          --stack-name ${{ env.TRANSFORNATION_STACK_NAME }} \
+          --template-body file://infrastructure/transformation/RDS.yml \
+          --region ${{ env.AWS_REGION_NAME }} \
+          --capabilities CAPABILITY_NAMED_IAM \
+          --parameters \
+          ParameterKey=DBName,ParameterValue=${{ env.DATA_BASE_NAME }} \
+          ParameterKey=DBUsername,ParameterValue=${{ secrets.DB_USERNAME }} \
+          ParameterKey=DBPassword,ParameterValue=${{ secrets.DB_PASSWORD }} 
+
+      - name: Wait transformation stack create complite
+        run: |
+          aws cloudformation wait stack-create-complete \
+          --stack-name ${{ env.TRANSFORNATION_STACK_NAME }} \
+          --region ${{ env.AWS_REGION_NAME }}
