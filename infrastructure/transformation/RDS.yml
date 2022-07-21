@@ -1,0 +1,125 @@
+Parameters:
+  DBUsername:
+    Type: "String"
+  DBPassword:
+    Type: "String"
+  DBName:
+    Type: "String"
+
+Resources:
+  VPC:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      CidrBlock: "10.0.0.0/16"
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+      Tags:
+        - Key: "Name"
+          Value: A-nta
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  SubnetA:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs
+          Ref: 'AWS::Region'
+      VpcId: !Ref VPC
+      CidrBlock: "10.0.0.0/24"
+      MapPublicIpOnLaunch: true
+
+  SubnetB:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs
+          Ref: 'AWS::Region'
+      VpcId: !Ref VPC
+      CidrBlock: "10.0.1.0/24"
+      MapPublicIpOnLaunch: true
+
+  RouteTable:
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+
+  SubnetGroup:
+    Type: "AWS::RDS::DBSubnetGroup"
+    Properties:
+      DBSubnetGroupName: "subnetgroup"
+      DBSubnetGroupDescription: "Subnet Group"
+      SubnetIds:
+        - !Ref SubnetA
+        - !Ref SubnetB
+
+  InternetRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGateway
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref RouteTable
+
+  SubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref SubnetA
+
+  SubnetBRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref SubnetB
+
+  InstanceSecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+    Properties:
+      GroupName: "NTASecurityGroup"
+      GroupDescription: "RDS traffic"
+      VpcId: !Ref VPC
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 5432
+          ToPort: 5432
+
+        - IpProtocol: all
+          CidrIp: 0.0.0.0/0
+          FromPort: 0
+          ToPort: 65535
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          CidrIp: 0.0.0.0/0
+          FromPort: 5432
+          ToPort: 5432
+
+        - IpProtocol: all
+          CidrIp: 0.0.0.0/0
+          FromPort: 0
+          ToPort: 65535
+
+  RDSInstance:
+    Type: "AWS::RDS::DBInstance"
+    Properties:
+      AllocatedStorage: '20'
+      DBInstanceClass: "db.t3.micro"
+      DBSubnetGroupName: !Ref SubnetGroup
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBName: !Ref DBName
+      DBInstanceIdentifier: !Ref DBName
+      Engine: "postgres"
+      PubliclyAccessible: "true"
+      VPCSecurityGroups:
+        - !Ref InstanceSecurityGroup
