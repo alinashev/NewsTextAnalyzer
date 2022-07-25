@@ -11,7 +11,6 @@ dependencies:
 	pip install -r project/requirements.txt
 
 test:
-	ls
 	python -m unittest discover -s tests/ingestion/url
 	python -m unittest discover -s tests/ingestion/scraping
 	python -m unittest discover -s tests/transformation
