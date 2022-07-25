@@ -1,0 +1,29 @@
+name: Orchestration
+
+env:
+  AWS_REGION_NAME: "us-east-2"
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: master
+
+      - name: Configuration AWS credentials
+        uses: aws-action/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION_NAME }}
+
+      - name: uploading state-machine definition
+        run: |
+          cd orchestration
+          aws s3 cp StateMachineDefinition.json s3://a-tech-bucket/StateMachines/NTA/StateMachineDefinition.json

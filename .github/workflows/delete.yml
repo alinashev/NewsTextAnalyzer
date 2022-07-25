@@ -1,0 +1,58 @@
+name: DELETE-Infrastructure
+
+env:
+  AWS_REGION_NAME: "us-east-2"
+
+  INFRASTRUCTURE_STACK_NAME: "a-infrastructure-nta"
+  ORCHESTRATION_STACK_NAME: "a-orchestration-nta-sm"
+  TRANSFORNATION_STACK_NAME: "a-transformation-nta-rds"
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    "runs-on":  ubuntu-latest
+
+    steps:
+      - name: Configuration AWS credentials
+        uses: aws-action/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION_NAME }}
+
+      - name: Deleting igestion stack
+        run: |
+          aws cloudformation delete-stack \
+          --stack-name ${{ env.INFRASTRUCTURE_STACK_NAME }} \
+          --region ${{ env.AWS_REGION_NAME }}
+
+      - name: Igestion stack delete complete
+        run: |
+          aws cloudformation wait stack-delete-complete \
+          --stack-name ${{ env.INFRASTRUCTURE_STACK_NAME }} \
+          --region ${{ env.AWS_REGION_NAME }}
+
+      - name: Deleting orchestration stack
+        run: |
+          aws cloudformation delete-stack \
+          --stack-name ${{ env.ORCHESTRATION_STACK_NAME }} \
+          --region ${{ env.AWS_REGION_NAME }}
+
+      - name: Orchestration stack delete complete
+        run: |
+          aws cloudformation wait stack-delete-complete \
+          --stack-name ${{ env.ORCHESTRATION_STACK_NAME }} \
+          --region ${{ env.AWS_REGION_NAME }}
+
+      - name: Deleting transformation stack
+        run: |
+          aws cloudformation delete-stack \
+          --stack-name ${{ env.TRANSFORNATION_STACK_NAME }} \
+          --region ${{ env.AWS_REGION_NAME }}
+
+      - name: Transformation stack delete complete
+        run: |
+          aws cloudformation wait stack-delete-complete \
+          --stack-name ${{ env.TRANSFORNATION_STACK_NAME }} \
+          --region ${{ env.AWS_REGION_NAME }}
