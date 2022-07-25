@@ -1,0 +1,66 @@
+name: Code-Deploy
+
+env:
+  AWS_REGION_NAME: "us-east-2"
+  LAMBDA_STACK_NAME: "a-stack"
+  LAMBDA_SCRAPER_NAME: "a-scraper"
+
+on:
+  push:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: master
+
+      - name: Configuration AWS credentials
+        uses: aws-action/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION_NAME }}
+
+      - name: Deploy lambda stack
+        run: |
+          cp -R project/commons project/ingestion/url/ 
+          rm -r project/ingestion/url/commons/configurator.py
+          cd project/ingestion/url && zip -r9 index.zip .
+          
+          aws s3 cp index.zip s3://a-tech-bucket/NTA/LambdaStack/index.zip
+          rm index.zip
+          
+          aws lambda update-function-code \
+           --function-name ${{ env.LAMBDA_STACK_NAME }}\
+           --region ${{ env.AWS_REGION_NAME }} \
+           --s3-bucket "a-tech-bucket"\
+           --s3-key NTA/LambdaStack/index.zip
+
+      - name: Deploy lambda scraper
+        run: |
+          cp -R project/commons project/ingestion/scraping/ 
+          rm -r project/ingestion/scraping/commons/configurator.py
+          cd project/ingestion/scraping && zip -r9 index.zip .
+          
+          aws s3 cp index.zip s3://a-tech-bucket/NTA/LambdaScraper/index.zip
+          rm index.zip
+          
+          aws lambda update-function-code \
+           --function-name ${{ env.LAMBDA_SCRAPER_NAME }}\
+           --region ${{ env.AWS_REGION_NAME }} \
+           --s3-bucket "a-tech-bucket"\
+           --s3-key NTA/LambdaScraper/index.zip  
+
+      - name: Deploy Spark application code
+        run: |
+          cp -R project/commons project/transformation
+          cd project/transformation && zip -r9 utilities.zip . -x "*jars/*" -x "*main.py*"
+          aws s3 cp utilities.zip s3://a-tech-bucket/NTA/app/utilities.zip
+          cd ../..
+          aws s3 cp project/transformation/main.py s3://a-tech-bucket/NTA/app/main.py
+          aws s3 cp project/requirements.txt s3://a-tech-bucket/NTA/app/requirements.txt
+          aws s3 cp project/transformation/jars/postgresql-42.4.0.jar s3://a-tech-bucket/NTA/app/jars/postgresql-42.4.0.jar
