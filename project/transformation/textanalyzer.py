@@ -5,29 +5,29 @@ from typing import Any
 from nltk import pos_tag, WordNetLemmatizer
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from nltk.sentiment import SentimentIntensityAnalyzer
+from pyspark.ml.feature import HashingTF
+from pyspark.sql import DataFrame
 
 
 class TextAnalyzer:
 
-    def __init__(self, param: str) -> None:
+    def __init__(self, param: str = None) -> None:
         self.param = param
 
-    def analyze(self, sentence) -> list:
+    def analyze(self, sentence: str) -> list:
         words: list = self.preprocess(sentence)
-        if self.param == "word":
-            return words
-        elif self.param == "part":
+        if self.param == "part":
             return self.mark_parts(words)
+        return words
 
-    def preprocess(self, sentence) -> list:
+    def preprocess(self, sentence: str) -> list:
         return self.clean_stopwords(
             self.tokenize(self.remove_characters(sentence))
         )
 
-    def remove_characters(self, sentence) -> Any:
+    def remove_characters(self, sentence: str) -> Any:
         pattern: Pattern = re.compile(r'\t|\n|\.|-|:|;|\)|\(|\?|,|"')
-        return re.sub(pattern, '', sentence)
+        return re.sub(pattern, ' ', str(sentence))
 
     def tokenize(self, sentence: str) -> list:
         tokenized_word: list = list()
@@ -60,6 +60,14 @@ class TextAnalyzer:
             general_list.extend(i)
         return general_list
 
-    def polarity(self, word: str) -> float:
-        sia: SentimentIntensityAnalyzer = SentimentIntensityAnalyzer()
-        return sia.polarity_scores(word)["compound"]
+    def preparation(self, df: DataFrame,
+                    udf_analyzer: Any, target_col: str) -> DataFrame:
+        return self.vectorizer(
+            df.withColumn("processed", udf_analyzer(target_col)),
+            "processed", "features"
+        )
+
+    def vectorizer(self, df: DataFrame,
+                   inputCol: str, outputCol: str) -> DataFrame:
+        hashTF: HashingTF = HashingTF(inputCol=inputCol, outputCol=outputCol)
+        return hashTF.transform(df)
