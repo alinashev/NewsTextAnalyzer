@@ -1,6 +1,7 @@
 import boto3
 
 from typing import Any
+from botocore.exceptions import ClientError
 
 
 class Loader:
@@ -11,12 +12,15 @@ class Loader:
     def put(self, id: str, category: str, source: str, news: str) -> None:
         database: Any = boto3.resource("dynamodb")
         table: Any = database.Table(self.table)
-        table.put_item(
-            Item={
-                "id": id,
-                "category": category,
-                "date": self.date,
-                "source": source,
-                "news": news
-            }
-        )
+        try:
+            table.put_item(
+                Item={
+                    "id": id,
+                    "category": category,
+                    "date": self.date,
+                    "source": source,
+                    "news": news
+                }
+            )
+        except ClientError as ce:
+            print(ce.response["ResponseMetadata"]["HTTPStatusCode"])

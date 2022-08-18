@@ -34,12 +34,38 @@
         }
       ,
         {
-          "StartAt": "Lambda_stack_americanbankingnews",
+          "StartAt": "Lambda_stack_metro",
           "States": {
-            "Lambda_stack_americanbankingnews": {
+            "Lambda_stack_metro": {
               "Type": "Task",
               "Parameters": {
-                "Source": "americanbankingnews"
+                "Source": "metro"
+              },
+              "Resource": "arn:aws:lambda:us-east-2:062261762656:function:a-stack",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Lambda_stack_guardian",
+          "States": {
+            "Lambda_stack_guardian": {
+              "Type": "Task",
+              "Parameters": {
+                "Source": "guardian"
+              },
+              "Resource": "arn:aws:lambda:us-east-2:062261762656:function:a-stack",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Lambda_stack_dailymail",
+          "States": {
+            "Lambda_stack_dailymail": {
+              "Type": "Task",
+              "Parameters": {
+                "Source": "dailymail"
               },
               "Resource": "arn:aws:lambda:us-east-2:062261762656:function:a-stack",
               "End": true
