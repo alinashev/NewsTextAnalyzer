@@ -2,6 +2,7 @@ import os
 
 from pyspark.sql import SparkSession
 
+from snowflakeconf import SnowflakeConfigurator
 from textanalyzer import TextAnalyzer
 from executor import Executor
 from configurator import TransformationConfigurator
@@ -27,10 +28,12 @@ def main():
     conf: TransformationConfigurator = TransformationConfigurator()
     analyzer: TextAnalyzer = TextAnalyzer()
     trainer: Trainer = Trainer(spark_session, analyzer)
+    snowflake = snowflake = SnowflakeConfigurator()
 
     Executor.execute(
         spark_session, conf,
-        trainer.train(), trainer.sentiment_classes
+        trainer.train(), trainer.sentiment_classes,
+        snowflake
     )
 
 

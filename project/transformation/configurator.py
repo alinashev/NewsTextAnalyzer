@@ -10,7 +10,7 @@ from commons.secretsmanager import SecretsManager
 class TransformationConfigurator(Configurator):
 
     def get_date(self) -> Any:
-        return datetime.date.today() - datetime.timedelta(days=1)
+        return datetime.date.today() - datetime.timedelta(days=2)
 
     @staticmethod
     def get_source_name() -> str:

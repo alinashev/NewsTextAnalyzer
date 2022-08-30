@@ -1,5 +1,4 @@
 import pyspark.sql.functions as F
-
 from typing import Any
 from pyspark.sql.functions import udf, explode
 from pyspark.sql import DataFrame
@@ -11,14 +10,22 @@ from textanalyzer import TextAnalyzer
 class Aggregator:
 
     def aggregate(self, df: DataFrame, conf: Any,
-                  model: Any, sentiment_classes: DataFrame) -> None:
+                  model: Any, sentiment_classes: DataFrame,
+                  snowflake) -> None:
         aggregation: dict = self.action(df, model, sentiment_classes)
 
         for a in aggregation:
-            aggregation[a].withColumn(
+            df_temp = aggregation[a].withColumn(
                 "date",
                 F.lit(str(conf.get_date()))
-            ).write.jdbc(**conf.table_config()[a])
+            )
+            df_temp.write.jdbc(**conf.table_config()[a])
+            if self.is_sentiment(a):
+                df_temp.write.format("net.snowflake.spark.snowflake") \
+                    .options(**snowflake.snowflake_configuration()) \
+                    .option("dbtable", "SENTIMENT") \
+                    .mode("append") \
+                    .save()
 
     @staticmethod
     def length(df: DataFrame) -> DataFrame:
@@ -78,6 +85,9 @@ class Aggregator:
             sentiment_classes,
             df.prediction == sentiment_classes.polarity
         )
+
+    def is_sentiment(self, action):
+        return True if action is "sentiment" else False
 
     def action(self, df: DataFrame, model: Any,
                sentiment_classes: DataFrame) -> dict:
