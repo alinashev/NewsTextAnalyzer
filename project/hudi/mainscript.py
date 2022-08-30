@@ -42,7 +42,7 @@ starting_position_of_kinesis_iterator = \
 window_size = args["window_size"]
 catalogue_table_name = database_name + '.' + hudi_table_name
 
-data_frame_DataSource0 = glueContext.create_data_frame.from_catalog(
+data_frame_from_catalog = glueContext.create_data_frame.from_catalog(
     database=database_name,
     table_name=kinesis_table_name,
     transformation_ctx="DataSource0",
@@ -52,7 +52,7 @@ data_frame_DataSource0 = glueContext.create_data_frame.from_catalog(
     }
 )
 
-hudiWriteConfig = {
+hudi_write_config = {
     'className': 'org.apache.hudi',
     'hoodie.table.name': hudi_table_name,
     'hoodie.datasource.write.operation': 'upsert',
@@ -68,7 +68,7 @@ hudiWriteConfig = {
     'hoodie.deltastreamer.keygen.timebased.output.dateformat': 'yyyy/MM/dd'
 }
 
-hudiGlueConfig = {
+hudi_glue_config = {
     'hoodie.datasource.hive_sync.enable': 'true',
     'hoodie.datasource.hive_sync.sync_as_datasource': 'false',
     'hoodie.datasource.hive_sync.database': database_name,
@@ -129,14 +129,14 @@ def processBatch(data_frame, batchId):
             connection_type="custom.spark",
             connection_options={
                 'path': s3_path_hudi,
-                **hudiWriteConfig,
-                **hudiGlueConfig
+                **hudi_write_config,
+                **hudi_glue_config
             }
         )
 
 
 glueContext.forEachBatch(
-    frame=data_frame_DataSource0,
+    frame=data_frame_from_catalog,
     batch_function=processBatch,
     options={
         "windowSize": window_size,
