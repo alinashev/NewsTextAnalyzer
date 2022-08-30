@@ -3,7 +3,7 @@ Parameters:
   HudiConnectionName:
     Description: The name of the AWS Glue Connection created in Glue Studio using the deep URL
     Type: String
-    Default: hudi-connection
+    Default: a-hudi-connection
 
   KinesisIteratorPosition:
     Description: The position from where to read from Kinesis stream, valid values are LATEST, TRIM_HORIZON or EARLIEST
