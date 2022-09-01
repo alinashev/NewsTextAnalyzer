@@ -15,12 +15,20 @@ class DynamoReader:
         table: Any = dynamodb.Table(
             TransformationConfigurator.get_source_name()
         )
+        
         response: Any = table.scan(
             FilterExpression=Attr('date').eq(
-                str(conf.get_date())))["Items"]
+                str(conf.get_date())))
+        data: list = response["Items"]
 
+        while 'LastEvaluatedKey' in response:
+            response = table.scan(
+                FilterExpression=Attr('date').eq(
+                    str(conf.get_date())),
+                ExclusiveStartKey=response['LastEvaluatedKey'])
+            data.extend(response['Items'])
         try:
-            return spark_session.sparkContext.parallelize(response).toDF()
+            return spark_session.sparkContext.parallelize(data).toDF()
         except ValueError:
             print("No available data for the selected day")
             raise SystemExit

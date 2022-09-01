@@ -23,9 +23,15 @@ class IngestionConfigurator(Configurator):
                 + "//article"
                 + "//div[@data-component='text-block']//p",
 
-            "americanbankingnews":
-                "//div[@itemprop='articleBody']//p",
-
             "dailycaller":
-                "//main//div[@id='ob-read-more-selector']//p"
+                "//main//div[@id='ob-read-more-selector']//p",
+
+            "metro":
+                "//article//p[not(@class='follow-promo')]",
+
+            "guardian":
+                "//div[@id='maincontent']//p",
+
+            "dailymail":
+                "//div[@itemprop='articleBody']//p"
         }

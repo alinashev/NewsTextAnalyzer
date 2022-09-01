@@ -46,13 +46,19 @@ class TransformationConfigurator(Configurator):
             },
             "word": {
                 "url": self.get_db_url(),
-                "table": "word",
+                "table": "word_sentiment",
                 "mode": "append",
                 "properties": self.db_configuration()
             },
             "part": {
                 "url": self.get_db_url(),
                 "table": "part",
+                "mode": "append",
+                "properties": self.db_configuration()
+            },
+            "sentiment": {
+                "url": self.get_db_url(),
+                "table": "sentiment",
                 "mode": "append",
                 "properties": self.db_configuration()
             }
@@ -64,5 +70,3 @@ class TransformationConfigurator(Configurator):
         nltk.download('wordnet')
         nltk.download('omw-1.4')
         nltk.download('stopwords')
-        nltk.download('averaged_perceptron_tagger')
-        nltk.download('vader_lexicon')
