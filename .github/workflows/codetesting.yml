@@ -1,0 +1,47 @@
+name: Code-Testing
+
+env:
+  AWS_REGION_NAME: "us-east-2"
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python: [3.9]
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: master
+
+      - name: Install python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Run linter
+        run: make linter
+
+      - name: Install dependencies
+        run: make dependencies
+
+      - name: Install internal packages
+        run: make packages
+
+      - name: Configuration AWS credentials
+        uses: aws-action/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ACCESS_KEY }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION_NAME }}
+
+      - name: Tests run
+        run: make test
