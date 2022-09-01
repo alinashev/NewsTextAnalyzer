@@ -62,5 +62,5 @@ jobs:
           aws s3 cp utilities.zip s3://a-tech-bucket/NTA/app/utilities.zip
           cd ../..
           aws s3 cp project/transformation/main.py s3://a-tech-bucket/NTA/app/main.py
-          aws s3 cp requirements.txt s3://a-tech-bucket/NTA/app/requirements.txt
+          aws s3 cp project/requirements.txt s3://a-tech-bucket/NTA/app/requirements.txt
           aws s3 cp project/transformation/jars/postgresql-42.4.0.jar s3://a-tech-bucket/NTA/app/jars/postgresql-42.4.0.jar
