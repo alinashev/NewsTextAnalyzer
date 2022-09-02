@@ -5,9 +5,10 @@ from commons.configurator import Configurator
 
 class IngestionConfigurator(Configurator):
 
-    def __init__(self, source: str, table: str) -> None:
+    def __init__(self, source: str, table: str, stream: str) -> None:
         self.source = source
         self.table = table
+        self.stream = stream
         self.date = str(datetime.date.today() - datetime.timedelta(days=1))
 
     def get_date(self) -> str:
@@ -15,6 +16,9 @@ class IngestionConfigurator(Configurator):
 
     def get_table_name(self) -> str:
         return self.table
+
+    def get_stream_name(self) -> str:
+        return self.stream
 
     def get_xpath(self) -> dict:
         return {

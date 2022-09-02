@@ -6,6 +6,7 @@ env:
   INFRASTRUCTURE_STACK_NAME: "a-infrastructure-nta"
   ORCHESTRATION_STACK_NAME: "a-orchestration-nta-sm"
   TRANSFORNATION_STACK_NAME: "a-transformation-nta-rds"
+  HUDI_STACK_NAME: "a-hudi-nta"
 
   LAMBDA_STACK_NAME: "a-stack"
   LAMBDA_SCRAPER_NAME: "a-scraper"
@@ -13,6 +14,9 @@ env:
 
   STATE_MACHINE_NAME: "a-nta-sm"
   DATA_BASE_NAME: "newsdata"
+  HUDI_CONNECTOR_NAME: "a-hudi-connection"
+  KINESIS_ITERATOR_POSITION: "LATEST"
+  WINDOW_SIZE: "10 seconds"
 
 on: workflow_dispatch
 
@@ -22,8 +26,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: master
 
       - name: Configuration AWS credentials
         uses: aws-action/configure-aws-credentials@v1
@@ -83,3 +85,15 @@ jobs:
           aws cloudformation wait stack-create-complete \
           --stack-name ${{ env.TRANSFORNATION_STACK_NAME }} \
           --region ${{ env.AWS_REGION_NAME }}
+
+      - name: Uploadind Hudi stack (kinesis stream - glue job)
+        run: |
+          aws cloudformation create-stack \
+          --stack-name ${{ env.HUDI_STACK_NAME }} \
+          --template-body file://infrastructure/hudi/HudiGlueTemp.yml \
+          --region ${{ env.AWS_REGION_NAME }} \
+          --capabilities CAPABILITY_NAMED_IAM \
+          --parameters \
+          ParameterKey=HudiConnectionName,ParameterValue=${{ env.HUDI_CONNECTOR_NAME }} \
+          ParameterKey=KinesisIteratorPosition,ParameterValue=${{ env.KINESIS_ITERATOR_POSITION }} \
+          ParameterKey=WindowSize,ParameterValue=${{ env.WINDOW_SIZE }}

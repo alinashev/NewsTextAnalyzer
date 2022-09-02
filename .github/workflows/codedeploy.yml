@@ -7,7 +7,8 @@ env:
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - master
 
 jobs:
   build:
@@ -15,8 +16,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: master
 
       - name: Configuration AWS credentials
         uses: aws-action/configure-aws-credentials@v1
@@ -43,7 +42,7 @@ jobs:
       - name: Deploy lambda scraper
         run: |
           cp -R project/commons project/ingestion/scraping/ 
-          rm -r project/ingestion/scraping/commons/configurator.py
+          rm -r project/ingestion/scraping/commons/secretsmanager.py
           cd project/ingestion/scraping && zip -r9 index.zip .
           
           aws s3 cp index.zip s3://a-tech-bucket/NTA/LambdaScraper/index.zip
@@ -64,3 +63,14 @@ jobs:
           aws s3 cp project/transformation/main.py s3://a-tech-bucket/NTA/app/main.py
           aws s3 cp project/requirements.txt s3://a-tech-bucket/NTA/app/requirements.txt
           aws s3 cp project/transformation/jars/postgresql-42.4.0.jar s3://a-tech-bucket/NTA/app/jars/postgresql-42.4.0.jar
+          rm utilities.zip
+
+      - name: Deploy Hudi code
+        run: |
+          cp -R project/commons project/hudi/
+          rm - r project/hudi/commons/secretsmanager.py
+          cd project/hudi && zip -r9 extra.zip . -x "*mainscript.py*"
+          aws s3 cp extra.zip s3://a-tech-bucket/Hudi/Extra/extra.zip
+          cd ../..
+          aws s3 cp project/hudi/mainscript.py s3://a-tech-bucket/Hudi/artifacts/mainscript.py
+          rm extra.zip

@@ -1,9 +1,12 @@
 import json
+import os
 import uuid
 
 from configurator import IngestionConfigurator
+from news import News
+from streamloader import Stream
 from scraper import Scraper
-from loader import Loader
+from dynamoloader import Dynamo
 
 
 def lambda_handler(event, context):
@@ -14,16 +17,24 @@ def lambda_handler(event, context):
         print("Message empty")
         return
 
-    conf = IngestionConfigurator(event['source'], 'aNews')
+    conf: IngestionConfigurator = IngestionConfigurator(
+        event['source'],
+        os.environ['DYNAMODB_TABLE_NAME'],
+        os.environ['STREAM_NAME']
+    )
 
-    scraper: Scraper = Scraper(event['url'],
-                               conf.get_xpath().get(event['source']))
+    scraper: Scraper = Scraper(
+        event['url'], conf.get_xpath().get(event['source'])
+    )
 
-    loader: Loader = Loader(conf.get_table_name(),
-                            conf.get_date())
+    news: dict = News(
+        uuid.uuid4().hex, conf.get_date(),
+        event['category'], event['source'],
+        scraper.scrape()
+    ).__dict__
 
-    loader.put(uuid.uuid4().hex, event['category'],
-               event['source'], scraper.scrape())
+    Dynamo(conf.get_table_name(), conf.get_date()).put(news)
+    Stream(conf.get_stream_name(), conf.get_date()).put(news)
 
     return {
         'statusCode': 200
