@@ -101,7 +101,7 @@ Resources:
       Command:
         Name: gluestreaming
         PythonVersion: 3
-        ScriptLocation: !Join ['', ["s3://", "a-hudi-bucket", "/artifacts/mainscript.py"]]
+        ScriptLocation: !Join ['', ["s3://", "a-tech-bucket", "Hudi/artifacts/mainscript.py"]]
       Connections:
         Connections:
           - !Ref HudiConnectionName
@@ -122,9 +122,12 @@ Resources:
         '--enable-glue-datacatalog': 'true'
         '--enable-spark-ui': 'true'
         '--class': 'GlueApp'
+        "--extra-py-files": "s3://a-tech-bucket/Hudi/Extra/extra.zip"
       ExecutionProperty:
-        MaxConcurrentRuns: 1
+        MaxConcurrentRuns: 2
       GlueVersion: 3.0
       MaxRetries: 0
       Name: "Hudi_Streaming_Job_NTA"
       Role: !GetAtt ExecuteGlueHudiJobRole.Arn
+      NumberOfWorkers: 2
+      WorkerType: G.1X

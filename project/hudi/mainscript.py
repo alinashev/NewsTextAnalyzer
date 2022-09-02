@@ -1,24 +1,25 @@
+import os
 import sys
-from awsglue.transforms import *
+
 from awsglue.utils import getResolvedOptions
 from pyspark.sql.session import SparkSession
-from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.job import Job
-from pyspark.sql import DataFrame, Row
-from pyspark.sql.functions import *
-from pyspark.sql.functions import col, to_timestamp, monotonically_increasing_id, to_date, when
-import datetime
 from awsglue import DynamicFrame
+from awsglue.utils import GlueArgumentError
 
-import boto3
+from configurator import HudiConfigurator
 
-args = getResolvedOptions(
-    sys.argv,
-    ["JOB_NAME", "database_name", "kinesis_table_name",
-     "starting_position_of_kinesis_iterator", "hudi_table_name",
-     "window_size", "s3_path_hudi", "s3_path_spark"]
-)
+try:
+    args = getResolvedOptions(
+        sys.argv,
+        ["JOB_NAME", "database_name", "kinesis_table_name",
+         "starting_position_of_kinesis_iterator", "hudi_table_name",
+         "window_size", "s3_path_hudi", "s3_path_spark"]
+    )
+except GlueArgumentError:
+    print("GlueArgumentError: no argument values")
+    os._exit(0)
 
 spark = SparkSession.builder.config(
     'spark.serializer',
@@ -52,33 +53,8 @@ data_frame_from_catalog = glueContext.create_data_frame.from_catalog(
     }
 )
 
-hudi_write_config = {
-    'className': 'org.apache.hudi',
-    'hoodie.table.name': hudi_table_name,
-    'hoodie.datasource.write.operation': 'upsert',
-    'hoodie.datasource.write.table.type': 'COPY_ON_WRITE',
-    'hoodie.datasource.write.precombine.field': 'date',
-    'hoodie.datasource.write.recordkey.field': 'source',
-    'hoodie.datasource.write.partitionpath.field':
-        'source:SIMPLE,year:SIMPLE,month:SIMPLE,day:SIMPLE',
-    'hoodie.datasource.write.keygenerator.class':
-        'org.apache.hudi.keygen.CustomKeyGenerator',
-    'hoodie.deltastreamer.keygen.timebased.timestamp.type': 'MIXED',
-    'hoodie.deltastreamer.keygen.timebased.input.dateformat': 'yyyy-mm-dd',
-    'hoodie.deltastreamer.keygen.timebased.output.dateformat': 'yyyy/MM/dd'
-}
-
-hudi_glue_config = {
-    'hoodie.datasource.hive_sync.enable': 'true',
-    'hoodie.datasource.hive_sync.sync_as_datasource': 'false',
-    'hoodie.datasource.hive_sync.database': database_name,
-    'hoodie.datasource.hive_sync.table': hudi_table_name,
-    'hoodie.datasource.hive_sync.use_jdbc': 'false',
-    'hoodie.datasource.write.hive_style_partitioning': 'true',
-    'hoodie.datasource.hive_sync.partition_extractor_class':
-        'org.apache.hudi.hive.MultiPartKeysValueExtractor',
-    'hoodie.datasource.hive_sync.partition_fields': 'source,year,month,day'
-}
+configurator = HudiConfigurator(hudi_table_name=hudi_table_name,
+                                database_name=database_name)
 
 
 def get_existing_table_schema(table):
@@ -129,8 +105,8 @@ def processBatch(data_frame, batchId):
             connection_type="custom.spark",
             connection_options={
                 'path': s3_path_hudi,
-                **hudi_write_config,
-                **hudi_glue_config
+                **configurator.get_hudi_write_config(),
+                **configurator.get_hudi_glue_config()
             }
         )
 
