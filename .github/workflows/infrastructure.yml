@@ -98,4 +98,4 @@ jobs:
           --parameters \
           ParameterKey=HudiConnectionName,ParameterValue=${{ env.HUDI_CONNECTOR_NAME }} \
           ParameterKey=KinesisIteratorPosition,ParameterValue=${{ env.KINESIS_ITERATOR_POSITION }} \
-          ParameterKey=WindowSize,ParameterValue=${{ secrets.WINDOW_SIZE }}
+          ParameterKey=WindowSize,ParameterValue=${{ env.WINDOW_SIZE }}
