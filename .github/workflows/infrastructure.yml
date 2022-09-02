@@ -26,8 +26,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: master
 
       - name: Configuration AWS credentials
         uses: aws-action/configure-aws-credentials@v1
@@ -88,7 +86,7 @@ jobs:
           --stack-name ${{ env.TRANSFORNATION_STACK_NAME }} \
           --region ${{ env.AWS_REGION_NAME }}
 
-      -name: Uploadind Hudi stack (kinesis stream - glue job)
+      - name: Uploadind Hudi stack (kinesis stream - glue job)
         run: |
           aws cloudformation create-stack \
           --stack-name ${{ env.HUDI_STACK_NAME }} \

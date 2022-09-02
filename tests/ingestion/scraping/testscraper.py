@@ -7,7 +7,9 @@ from project.ingestion.scraping.scraper import Scraper
 class TestScraper(unittest.TestCase):
     def setUp(self) -> None:
         source: str = "bbc"
-        conf: IngestionConfigurator = IngestionConfigurator(source, "None")
+
+        conf: IngestionConfigurator = \
+            IngestionConfigurator(source, "None", "None")
 
         url: str = "https://www.bbc.co.uk/news/" \
                    + "world-us-canada-61889593?" \
