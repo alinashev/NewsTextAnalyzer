@@ -10,8 +10,7 @@ from textanalyzer import TextAnalyzer
 class Aggregator:
 
     def aggregate(self, df: DataFrame, conf: Any,
-                  model: Any, sentiment_classes: DataFrame,
-                  snowflake) -> None:
+                  model: Any, sentiment_classes: DataFrame) -> None:
         aggregation: dict = self.action(df, model, sentiment_classes)
 
         for a in aggregation:
@@ -19,11 +18,11 @@ class Aggregator:
                 "date",
                 F.lit(str(conf.get_date()))
             )
-            df_temp.write.jdbc(**conf.table_config()[a])
+            df_temp.write.jdbc(**conf.get_db_table_config()[a])
             if self.is_sentiment(a):
                 df_temp.write.format("net.snowflake.spark.snowflake") \
-                    .options(**snowflake.snowflake_configuration()) \
-                    .option("dbtable", "SENTIMENT") \
+                    .options(**conf.get_snowflake_configuration()) \
+                    .option("dbtable", conf.get_snowflake_table_name()) \
                     .mode("append") \
                     .save()
 

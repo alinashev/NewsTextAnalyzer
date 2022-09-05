@@ -10,10 +10,9 @@ class Executor:
 
     @staticmethod
     def execute(spark_session: SparkSession, conf: Any,
-                model: Any, sentiment_classes: DataFrame,
-                snowflake) -> None:
+                model: Any, sentiment_classes: DataFrame) -> None:
         df: DataFrame = DynamoReader.read(spark_session, conf)
         Aggregator().aggregate(
             df.withColumn("length", F.length("news")),
-            conf, model, sentiment_classes, snowflake
+            conf, model, sentiment_classes
         )

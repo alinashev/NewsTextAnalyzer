@@ -10,7 +10,7 @@ from commons.secretsmanager import SecretsManager
 class TransformationConfigurator(Configurator):
 
     def get_date(self) -> Any:
-        return datetime.date.today() - datetime.timedelta(days=2)
+        return datetime.date.today() - datetime.timedelta(days=1)
 
     @staticmethod
     def get_source_name() -> str:
@@ -22,7 +22,7 @@ class TransformationConfigurator(Configurator):
                + SecretsManager.get_secret("a_rds_newsdata")["host"] \
                + "/newsdata"
 
-    def db_configuration(self) -> dict:
+    def get_db_configuration(self) -> dict:
         return {
             "user": SecretsManager.get_secret("a_rds_newsdata")["username"],
             "password":
@@ -30,38 +30,63 @@ class TransformationConfigurator(Configurator):
             "driver": "org.postgresql.Driver"
         }
 
-    def table_config(self) -> dict:
+    def get_db_table_config(self) -> dict:
         return {
             "length": {
                 "url": self.get_db_url(),
                 "table": "length",
                 "mode": "append",
-                "properties": self.db_configuration()
+                "properties": self.get_db_configuration()
             },
             "amount": {
                 "url": self.get_db_url(),
                 "table": "amount",
                 "mode": "append",
-                "properties": self.db_configuration()
+                "properties": self.get_db_configuration()
             },
             "word": {
                 "url": self.get_db_url(),
                 "table": "word_sentiment",
                 "mode": "append",
-                "properties": self.db_configuration()
+                "properties": self.get_db_configuration()
             },
             "part": {
                 "url": self.get_db_url(),
                 "table": "part",
                 "mode": "append",
-                "properties": self.db_configuration()
+                "properties": self.get_db_configuration()
             },
             "sentiment": {
                 "url": self.get_db_url(),
                 "table": "sentiment",
                 "mode": "append",
-                "properties": self.db_configuration()
+                "properties": self.get_db_configuration()
             }
+        }
+
+    def get_snowflake_table_name(self) -> str:
+        return "SENTIMENT"
+
+    def get_snowflake_source_name(self) -> str:
+        return "net.snowflake.spark.snowflake"
+
+    def get_snowflake_database(self) -> str:
+        return "NEWSDATA"
+
+    def get_snowflake_schema(self) -> str:
+        return "PUBLIC"
+
+    def get_snowflake_warehouse(self) -> str:
+        return "NTA_WH"
+
+    def get_snowflake_configuration(self) -> dict:
+        return {
+            "sfURL": SecretsManager.get_secret("a-nta-sf-url"),
+            "sfUser": SecretsManager.get_secret("a-nta-sf-user"),
+            "sfPassword": SecretsManager.get_secret("a-nta-sf-password"),
+            "sfDatabase": self.get_snowflake_database(),
+            "sfSchema": self.get_snowflake_schema(),
+            "sfWarehouse": self.get_snowflake_warehouse()
         }
 
     @staticmethod
