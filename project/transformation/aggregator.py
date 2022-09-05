@@ -87,7 +87,7 @@ class Aggregator:
         )
 
     def is_sentiment(self, action):
-        return True if action is "sentiment" else False
+        return True if action == "sentiment" else False
 
     def action(self, df: DataFrame, model: Any,
                sentiment_classes: DataFrame) -> dict:
