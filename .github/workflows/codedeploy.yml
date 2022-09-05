@@ -7,7 +7,8 @@ env:
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - master
 
 jobs:
   build:
@@ -15,8 +16,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-        with:
-          ref: master
 
       - name: Configuration AWS credentials
         uses: aws-action/configure-aws-credentials@v1
@@ -43,7 +42,7 @@ jobs:
       - name: Deploy lambda scraper
         run: |
           cp -R project/commons project/ingestion/scraping/ 
-          rm -r project/ingestion/scraping/commons/configurator.py
+          rm -r project/ingestion/scraping/commons/secretsmanager.py
           cd project/ingestion/scraping && zip -r9 index.zip .
           
           aws s3 cp index.zip s3://a-tech-bucket/NTA/LambdaScraper/index.zip
