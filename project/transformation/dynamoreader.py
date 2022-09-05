@@ -15,7 +15,6 @@ class DynamoReader:
         table: Any = dynamodb.Table(
             TransformationConfigurator.get_source_name()
         )
-        
         response: Any = table.scan(
             FilterExpression=Attr('date').eq(
                 str(conf.get_date())))

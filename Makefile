@@ -1,5 +1,6 @@
 linter:
 	pip install flake8
+	flake8 --ignore=W293,W503
 	flake8 .
 
 packages:

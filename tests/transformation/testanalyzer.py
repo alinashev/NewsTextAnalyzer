@@ -43,7 +43,7 @@ class TestTextAnalyzer(unittest.TestCase):
             self.assertEqual(len(preprocessed), 0)
 
     def test_remove_characters(self) -> None:
-        cleaned_string: Any = self.analyzer_word\
+        cleaned_string: Any = self.analyzer_word \
             .remove_characters(self.sentence)
         result: bool = any((c in self.chars) for c in cleaned_string)
         self.assertEqual(result, False)
@@ -74,14 +74,6 @@ class TestTextAnalyzer(unittest.TestCase):
             complex_count += len(i)
         merged_list: list = self.analyzer_word.merge_lists(self.complex_list)
         self.assertEqual(complex_count, len(merged_list))
-
-    def test_polarity_positive(self) -> None:
-        polarity: float = self.analyzer_word.polarity(self.positive_word)
-        self.assertGreater(polarity, 0)
-
-    def test_polarity_negative(self) -> None:
-        polarity: float = self.analyzer_word.polarity(self.negative_word)
-        self.assertLess(polarity, 0)
 
 
 if __name__ == '__main__':
