@@ -1,7 +1,30 @@
 {
-  "Comment": "Parallel Example.",
-  "StartAt": "Lambda",
+  "StartAt": "StartDBInstance",
   "States": {
+    "StartDBInstance": {
+      "Type": "Task",
+      "Next": "Glue StartJobRun",
+      "Parameters": {
+        "DbInstanceIdentifier": "newsdata"
+      },
+      "Resource": "arn:aws:states:::aws-sdk:rds:startDBInstance"
+    },
+    "Glue StartJobRun": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::glue:startJobRun",
+      "Parameters": {
+        "JobName": "Hudi_Streaming_Job_NTA"
+      },
+      "ResultPath": "$.GlueRunResult",
+      "Next": "PassParam:GlueRunId"
+    },
+    "PassParam:GlueRunId": {
+      "Type": "Pass",
+      "Parameters": {
+        "RunId.$": "States.Array($.GlueRunResult.JobRunId)"
+      },
+      "Next": "Lambda"
+    },
     "Lambda": {
       "Type": "Parallel",
       "Branches": [
@@ -17,8 +40,7 @@
               "End": true
             }
           }
-        }
-      ,
+        },
         {
           "StartAt": "Lambda_stack_dailycaller",
           "States": {
@@ -31,8 +53,7 @@
               "End": true
             }
           }
-        }
-      ,
+        },
         {
           "StartAt": "Lambda_stack_metro",
           "States": {
@@ -132,7 +153,7 @@
         "Subject": "[ERROR]: Task Failed",
         "Message.$": "$.error"
       },
-      "End": true
+      "Next": "TERMINATE"
     },
     "Create_Cluster": {
       "Type": "Task",
@@ -213,11 +234,12 @@
           "Next": "Notify"
         }
       ],
-      "Next": "Get_ClusterId"
+      "Next": "PassParam:ClusterId"
     },
-    "Get_ClusterId": {
+    "PassParam:ClusterId": {
       "Type": "Pass",
       "Parameters": {
+        "RunId.$": "$.RunId",
         "ClusterId.$": "$.CreateClusterResult.ClusterId"
       },
       "Next": "Submit_PySpark_Job"
@@ -260,14 +282,62 @@
           "BackoffRate": 2
         }
       ],
-      "Next": "Terminate_Cluster"
+      "Next": "TERMINATE"
     },
-    "Terminate_Cluster": {
-      "Type": "Task",
-      "Resource": "arn:aws:states:::elasticmapreduce:terminateCluster.sync",
-      "Parameters": {
-        "ClusterId.$": "$.ClusterId"
-      },
+    "TERMINATE": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "Terminate_Cluster",
+          "States": {
+            "Terminate_Cluster": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::elasticmapreduce:terminateCluster.sync",
+              "Parameters": {
+                "ClusterId.$": "$.ClusterId"
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "StopJobRun",
+          "States": {
+            "StopJobRun": {
+              "Type": "Task",
+              "Parameters": {
+                "JobName": "Hudi_Streaming_Job_NTA",
+                "JobRunIds.$": "$.RunId"
+              },
+              "Resource": "arn:aws:states:::aws-sdk:glue:batchStopJobRun",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "StopDBInstance",
+          "States": {
+            "StopDBInstance": {
+              "Type": "Task",
+              "Parameters": {
+                "DbInstanceIdentifier": "newsdata"
+              },
+              "End": true,
+              "Resource": "arn:aws:states:::aws-sdk:rds:stopDBInstance"
+            }
+          }
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": [
+            "States.ALL"
+          ],
+          "ResultPath": "$.error",
+          "Next": "Notify"
+        }
+      ],
+      "ResultPath": null,
       "End": true
     }
   }
